@@ -1,0 +1,130 @@
+version: 2
+
+sources:
+  - name: raw
+    description: Landing tables written by the ingestion API (contract-checked, pseudonymised).
+    schema: raw
+    tables:
+      - name: events
+        columns:
+          - name: event_id
+            data_tests: [unique, not_null]
+          - name: event_type
+            data_tests:
+              - accepted_values:
+                  arguments:
+                    values: [lesson_started, lesson_completed, quiz_answered, video_watched, plan_changed]
+          - name: learner_id
+            data_tests: [not_null]
+
+models:
+  - name: stg_lesson_started
+    columns:
+      - name: attempt_id
+        description: One attempt starts exactly once.
+        data_tests: [unique, not_null]
+      - name: platform
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [web, ios, android]
+
+  - name: stg_lesson_completed
+    columns:
+      - name: event_id
+        data_tests: [unique, not_null]
+      - name: schema_version
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [1, 2]
+                quote: false
+      - name: attempt_id
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('stg_lesson_started')
+                field: attempt_id
+              config:
+                severity: warn  # a completion whose start event was rejected is possible
+
+  - name: stg_quiz_answered
+    columns:
+      - name: event_id
+        data_tests: [unique, not_null]
+      - name: score_scaled
+        data_tests: [not_null]
+
+  - name: stg_video_watched
+    columns:
+      - name: event_id
+        data_tests: [unique, not_null]
+
+  - name: stg_plan_changed
+    columns:
+      - name: plan
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [free, premium]
+
+  - name: int_sessions
+    description: Sessions split on a gap of more than 30 minutes between a learner's events.
+    columns:
+      - name: session_id
+        data_tests: [unique, not_null]
+      - name: learner_id
+        data_tests: [not_null]
+
+  - name: dim_learner
+    description: SCD type 2 learner dimension (plan history free <-> premium).
+    columns:
+      - name: learner_sk
+        data_tests: [unique, not_null]
+      - name: plan
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [free, premium]
+      - name: valid_from
+        data_tests: [not_null]
+
+  - name: fct_lesson_attempts
+    columns:
+      - name: attempt_id
+        data_tests: [unique, not_null]
+      - name: learner_sk
+        description: Point-in-time key of the learner's plan version when the attempt started.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_learner')
+                field: learner_sk
+
+  - name: fct_daily_learner_activity
+    columns:
+      - name: learner_day_id
+        data_tests: [unique, not_null]
+      - name: learner_id
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_learner')
+                field: learner_id
+
+  - name: mart_teacher_weekly
+    description: One row per class per week for the teacher report.
+    columns:
+      - name: class_week_id
+        data_tests: [unique, not_null]
+      - name: class_id
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_learner')
+                field: class_id
+      - name: active_learners
+        data_tests: [not_null]
