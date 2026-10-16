@@ -1,0 +1,115 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/HaiNguyen-python/learning-events-platform/contracts/lesson_completed.v1.json",
+  "title": "A learner finished a lesson",
+  "type": "object",
+  "required": [
+    "event_id",
+    "event_type",
+    "schema_version",
+    "timestamp",
+    "actor",
+    "verb",
+    "object",
+    "context",
+    "result"
+  ],
+  "properties": {
+    "event_id": {
+      "type": "string",
+      "minLength": 8,
+      "description": "Client-generated UUID; the idempotency key."
+    },
+    "event_type": {
+      "const": "lesson_completed"
+    },
+    "schema_version": {
+      "const": 1
+    },
+    "timestamp": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?(Z|[+-]\\d{2}:\\d{2})$",
+      "description": "When it happened on the device (RFC 3339)."
+    },
+    "actor": {
+      "type": "object",
+      "required": [
+        "learner_id",
+        "class_id"
+      ],
+      "properties": {
+        "learner_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "class_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "email": {
+          "type": "string",
+          "pattern": "^[^@\\s]+@[^@\\s]+$",
+          "description": "PII: pseudonymised (HMAC-SHA256) at ingestion, never stored raw."
+        }
+      }
+    },
+    "verb": {
+      "const": "completed"
+    },
+    "object": {
+      "type": "object",
+      "required": [
+        "lesson_id",
+        "course_id"
+      ],
+      "properties": {
+        "lesson_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "course_id": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "context": {
+      "type": "object",
+      "required": [
+        "registration",
+        "platform"
+      ],
+      "properties": {
+        "registration": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Attempt id: links every statement of one lesson attempt (xAPI context.registration)."
+        },
+        "platform": {
+          "type": "string",
+          "enum": [
+            "web",
+            "ios",
+            "android"
+          ]
+        }
+      }
+    },
+    "result": {
+      "type": "object",
+      "required": [
+        "duration_seconds",
+        "success"
+      ],
+      "properties": {
+        "duration_seconds": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "success": {
+          "type": "boolean"
+        }
+      }
+    }
+  }
+}
