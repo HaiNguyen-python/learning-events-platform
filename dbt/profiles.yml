@@ -1,0 +1,19 @@
+# DuckDB is the default (local, tests, CI). The postgres target runs the same models against
+# the docker-compose database; it needs `pip install dbt-postgres`.
+learning_events:
+  target: "{{ env_var('LEVENTS_DBT_TARGET', 'duckdb') }}"
+  outputs:
+    duckdb:
+      type: duckdb
+      path: "{{ env_var('LEVENTS_DUCKDB_PATH', '../data/warehouse.duckdb') }}"
+      schema: analytics
+      threads: 4
+    postgres:
+      type: postgres
+      host: "{{ env_var('PGHOST', 'localhost') }}"
+      port: "{{ env_var('PGPORT', '5432') | as_number }}"
+      user: "{{ env_var('PGUSER', 'levents') }}"
+      password: "{{ env_var('PGPASSWORD', 'levents') }}"
+      dbname: "{{ env_var('PGDATABASE', 'levents') }}"
+      schema: analytics
+      threads: 4

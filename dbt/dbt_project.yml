@@ -1,0 +1,24 @@
+name: learning_events
+version: "0.1.0"
+config-version: 2
+profile: learning_events
+
+model-paths: ["models"]
+test-paths: ["tests"]
+clean-targets: ["target"]
+
+flags:
+  send_anonymous_usage_stats: false
+
+models:
+  learning_events:
+    staging:
+      +materialized: view
+    intermediate:
+      +materialized: table
+    marts:
+      +materialized: table
+
+vars:
+  # A gap longer than this (in seconds) starts a new session. Exactly 30 minutes does not.
+  session_gap_seconds: 1800
