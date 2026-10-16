@@ -1,0 +1,71 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "learning-events"
+version = "0.1.0"
+description = "Learning-event data platform: data contracts, ingestion API, dbt models and teacher reports"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [{ name = "Hai Nguyen" }]
+dependencies = [
+  "duckdb>=1.2,<2",
+  "fastapi>=0.110",
+  "httpx>=0.27",
+  "jsonschema>=4.21",
+  "uvicorn>=0.29",
+  # dbt is a runtime dependency because `levents run-all` builds the models.
+  "dbt-core==1.11.15",
+  "dbt-duckdb==1.10.1",
+]
+
+[project.optional-dependencies]
+postgres = ["psycopg[binary]>=3.1", "dbt-postgres==1.10.2"]
+report = ["matplotlib>=3.8"]
+dev = [
+  "pytest>=8",
+  "pytest-cov>=5",
+  "ruff>=0.5",
+  "mypy>=1.10",
+  "pre-commit>=3.7",
+  "matplotlib>=3.8",
+  "types-jsonschema",
+  "psycopg[binary]>=3.1",
+]
+
+[project.scripts]
+levents = "learning_events.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q --cov=learning_events --cov-report=term-missing:skip-covered"
+filterwarnings = ["ignore:Using `httpx` with `starlette.testclient` is deprecated"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+extend-exclude = ["dbt/target", "dbt/logs"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
+
+[tool.ruff.lint.flake8-bugbear]
+extend-immutable-calls = ["fastapi.Depends"]
+
+[tool.coverage.run]
+source = ["learning_events"]
+
+[tool.mypy]
+# 3.12, not 3.11: numpy >= 2.3 stubs (imported by duckdb and matplotlib) use 3.12 syntax.
+python_version = "3.12"
+ignore_missing_imports = true
+warn_unused_ignores = true
+warn_redundant_casts = true
+no_implicit_optional = true
+check_untyped_defs = true
+
